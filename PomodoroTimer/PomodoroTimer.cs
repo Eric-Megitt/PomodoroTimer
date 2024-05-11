@@ -35,10 +35,14 @@ static class PomodoroTimer {
 
 [/StartPomodoro index]
 [/S index]              - Decides which pomodoro you'll start on
+
 [/TimeDurations m m m]
 [/T m m m]              - Decides durations of pomodoro, short break & long break, respectively. Time provided in minutes
+
 [/H]
 [/?]                    - Brings up this screen. 
+
+Press any key to continue...
 """;
 	
 	// cli-arguments
@@ -102,6 +106,9 @@ static class PomodoroTimer {
 	
 	#region ArgumentHandling
 	static void ProcessArguments(string[] args) {
+		if (args[^1].Length == 0) {
+			args = args.SkipLast(1).ToArray();
+		}
 		for (int i = 0; i < args.Length;) {
 			if (!argumentsByHandle.ContainsKey(args[i])) {
 				IncorrectArguments();
@@ -110,25 +117,40 @@ static class PomodoroTimer {
 			
 			argument arg = argumentsByHandle[args[i]];
 			i++;
-			ArraySegment<string> parameters;
-			try {
-				parameters = new(args, i, parameterAmountByArgument[arg]);
-			}
-			catch (Exception exception) {
-				if (exception.GetType() != typeof(ArgumentException)) throw exception;
+			string[] p = args.Skip(i).SkipLast(args.Length - i - parameterAmountByArgument[arg]).ToArray();
+			if (parameterAmountByArgument[arg] != 0) {
+				ArraySegment<string> parameters;
+				try {
+					parameters = new(args, i, parameterAmountByArgument[arg]);
+				}
+				catch (Exception exception) {
+					if (exception.GetType() != typeof(ArgumentException)) throw exception;
 
-				IncorrectArguments();
-				return;
+					IncorrectArguments();
+					return;
+				}
+
+
+				if (p[^1].Length == 0) {
+					p = p.SkipLast(1).ToArray();
+				}
+
+				if (p.Length != parameterAmountByArgument[arg]) {
+					IncorrectArguments();
+					return;
+				}
+
+				foreach (string s in p) {
+					if (s[0] != '/') continue;
+
+					IncorrectArguments();
+					return;
+				}
+
+				Console.WriteLine($"length of p: {p.Length}");
 			}
 
-			foreach (string s in parameters) {
-				if (s[0] != '/') continue;
-				
-				IncorrectArguments();
-				return;
-			}
-
-			methodByArgument[arg].Invoke(parameters.Array);
+			methodByArgument[arg].Invoke(p);
 			i += parameterAmountByArgument[arg];
 		}
 	}
@@ -149,7 +171,7 @@ static class PomodoroTimer {
 	static void ChangeStartPomodoro(string[] parameters) {
 		int startPomodoro;
 		try {
-			startPomodoro = int.Parse(parameters[0]) - 1;
+			startPomodoro = 2 * (int.Parse(parameters[0]) - 1);
 		}
 		catch (Exception exception) {
 			if (exception.GetType() != typeof(FormatException)) throw exception;
@@ -173,11 +195,12 @@ static class PomodoroTimer {
 		}
 		catch (Exception exception) {
 			if (exception.GetType() != typeof(FormatException)) throw exception;
-			
+			Debug.LogWarning("in catch");
 			IncorrectArguments();
 			return;
 		}
 		if (pomodoro <= 0 || shortBreak <= 0 || longBreak <= 0) {
+			Debug.LogWarning("not in catch");
 			IncorrectArguments();
 			return;
 		}
@@ -189,6 +212,7 @@ static class PomodoroTimer {
 	
 	static void Help() {
 		Console.Write(helpText);
+		Console.ReadKey();
 	}
 	#endregion ArgumentFunctionality
 }
