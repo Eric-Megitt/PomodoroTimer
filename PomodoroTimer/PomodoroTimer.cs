@@ -96,16 +96,18 @@ Press any key to continue...
 				Console.Clear();
 				Console.WriteLine(phaseNameByPhase[p]);
 				Console.WriteLine($"Minutes left: {m}");
-				await Task.Delay(TimeSpan.FromMinutes(.01));
+				await Task.Delay(TimeSpan.FromMinutes(1));
 			}
 
 			pomodoroIndex++;
 			pomodoroIndex %= pomodorosBeforeLongBreak * 2;
+			Console.Beep();
 		}
 	}
 	
 	#region ArgumentHandling
 	static void ProcessArguments(string[] args) {
+		if (args.Length == 0) return;
 		if (args[^1].Length == 0) {
 			args = args.SkipLast(1).ToArray();
 		}
